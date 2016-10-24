@@ -12,6 +12,7 @@
 library(shiny); library(ggplot2); library(seacarb); library(data.table)
 library(DT) #devtools::install_github('rstudio/DT') #Using the development version per: http://stackoverflow.com/questions/36656882/shiny-datatableproxy-function-doesnt-exist
 options(datatable.integer64="character") #categorizes long id strings as characters
+options(shiny.maxRequestSize=30*1024^2) #Increased max file size to 30 Mb
 
 #Function
 #data.table: Replace all -999 with NA #http://stackoverflow.com/a/7249454/4718512
@@ -338,7 +339,6 @@ shinyServer(function(input, output, session) {
   #Process uploaded data
   dt <- reactive({if(is.null(input$inputFile)) return(NULL)
                         qq <- data.table::fread(input$inputFile$datapath, header = TRUE, na.strings = c("NA","#DIV/0!"))
-                        #f_dowle3(qq, NA_vals = input$uplNAs)        #convert -999 to NA (see function above)
                         return(qq)
   })
   #Recode user-defined NA strings to NA
@@ -353,7 +353,6 @@ shinyServer(function(input, output, session) {
   
   output$upl_str <- renderPrint({ str(dt()) })
 
-  output$troubleshooting <- renderPrint({list(input$uplNAs, input$upl_f_dowle3, dt()[1:3,1:7] )})#input$prDT_rows_selected })
   #Once data are uploaded, create a reactive UI with options selected from the uploaded data.
   #However, I want users to see the static part of the UI (column #, variable, unit) before they upload their data,
   #so I will make 2 UIs: one with static information and one reactive UI with dropdown selections based on uploaded data.
@@ -645,6 +644,7 @@ shinyServer(function(input, output, session) {
   output$session.information <- renderPrint({ sessionInfo() })
 
   #TROUBLESHOOTING
+  #output$troubleshooting <- renderPrint({list(input$uplNAs, input$upl_f_dowle3, dt()[1:3,1:7] )})#input$prDT_rows_selected })
   #output$troubleshooting <- renderPrint({list(paste(as.numeric(input$upl_calculate), pr_check$check), input$pr_plotBrush, pr_brush.ranges)})#input$prDT_rows_selected })
 
 

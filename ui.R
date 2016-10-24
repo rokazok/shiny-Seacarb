@@ -161,9 +161,8 @@ shinyUI(fluidPage(
   
     tabPanel("Upload",
       h2("Upload and process data"),
-      verbatimTextOutput("troubleshooting"),
       HTML("<b>Instructions:</b><br>
-           1) Upload data as a spreadsheet with the first row as a header. Each column should start with a letter and ideally have no spaces or special characters.<br>
+           1) Upload data as a spreadsheet with the first row as a header. Each column should start with a letter and ideally have no spaces or special characters. CSV files are recommended. File size is limited to 30 Mb.<br>
            2) Indicate missing values (NA) in the text box, separated by spaces. Ex. -9, -999 \"NULL\".  Click Process. <br>
               Note: Rows with missing values are removed from the full dataset. An option exists to assume missing phosphate and silicate values are 0 &mu;mol kg<sup>-1</sup>.<br>
            3) Select columns corresponding to the required inputs. Organize the data according to the template below for faster processing.<br>
