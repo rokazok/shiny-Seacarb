@@ -1,6 +1,6 @@
 #Constants
-colC <- c(5,4,3) #Column widths for carbonate parameters, relative to 12.  Integer values only
-colC1 <- c(3,4,2,3)  #Column widths for other parameters
+colC <- c(5L,4L,3L) #Column widths for carbonate parameters, relative to 12.  Integer values only
+colC1 <- c(3L,4L,2L,3L)  #Column widths for other parameters
 
 #CSS formatting.  Nice templates here: https://css-tricks.com/complete-guide-table-element/
 tableCSS <- list(tags$head(tags$style(HTML("
@@ -161,21 +161,31 @@ shinyUI(fluidPage(
   
     tabPanel("Upload",
       h2("Upload and process data"),
-
+      verbatimTextOutput("troubleshooting"),
       HTML("<b>Instructions:</b><br>
            1) Upload data as a spreadsheet with the first row as a header. Each column should start with a letter and ideally have no spaces or special characters.<br>
-           2) Select columns corresponding to the required inputs. Organize the data according to the template below for faster processing.<br>
-           3) Choose the two carbonate chemistry parameters for the calculations.<br>
-           4) Choose constants.<br>
-           5) Calculate.<br>
-           6) Download processed data as a .CSV file.<br>
-           7) <i>(Optional in Processed tab)</i> Visualize the processed data (X, Y, color)."),
+           2) Indicate missing values (NA) in the text box, separated by spaces. Ex. -9, -999 \"NULL\".  Click Process. <br>
+              Note: Rows with missing values are removed from the full dataset. An option exists to assume missing phosphate and silicate values are 0 &mu;mol kg<sup>-1</sup>.<br>
+           3) Select columns corresponding to the required inputs. Organize the data according to the template below for faster processing.<br>
+           4) Choose the two carbonate chemistry parameters for the calculations.<br>
+           5) Choose constants.<br>
+           6) Calculate.<br>
+           7) Download processed data as a .CSV file.<br>
+           8) <i>(Optional in Processed tab)</i> Visualize the processed data (X, Y, color)."),
       br(), br(), br(),
       fluidRow(column(6, fileInput("inputFile", "1) Browse for file")),  #Upload button
+               tags$script('$( "#inputFile" ).on( "click", function() { this.value = null; });'), #Allow file input reset. http://stackoverflow.com/a/36296838/4718512
        # After file is uploaded, read the columns in the server function,
        # and create a responsive dropdown menu for plotting the variables
                column(6, checkboxInput(inputId = "uplPreview", label = "Preview data", value = FALSE))
        ),
+      fluidRow(column(6,
+        textInput(inputId = "uplNAs", label="Indicate missing values (NA)", value = "-9 -999 NULL")
+        ),
+        column(3, checkboxInput(inputId = "upl_AssumeNuts0", label = "Assume missing nutrients are 0 &mu;mol kg<sup>-1</sup>", value = TRUE)),
+        column(3, actionButton("upl_f_dowle3", label = "Recode NAs"))
+        ),
+      br(),
       conditionalPanel(
        condition = "input.uplPreview == true",
        HTML("Preview uploaded data:<br>&nbsp;&nbsp; $Column  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : variableType &nbsp;&nbsp;&nbsp; Row1 Row2 Row3 ... "),

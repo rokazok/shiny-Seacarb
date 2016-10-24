@@ -9,16 +9,19 @@
 #- Upload your data, calculate carbonate chemistry, plot data, download data
 
 # server.R
-library(shiny); library(ggplot2); library(seacarb); library(data.table); library(DT)
+library(shiny); library(ggplot2); library(seacarb); library(data.table)
+library(DT) #devtools::install_github('rstudio/DT') #Using the development version per: http://stackoverflow.com/questions/36656882/shiny-datatableproxy-function-doesnt-exist
 options(datatable.integer64="character") #categorizes long id strings as characters
 
 #Function
 #data.table: Replace all -999 with NA #http://stackoverflow.com/a/7249454/4718512
-f_dowle3 = function(DT) {   # either of the following for loops
+f_dowle3 = function(DT, NA_vals) {   # either of the following for loops
   #for (j in names(DT))    set(DT,which( (DT[[j]]) == -999 ),j,NA)   # by name
-  #POTENTIALLY CHANGE THIS TO REGEX SEARCH: grepl("-999.*") #Ex. Station leg=2 line=11 station=128 castno=2 btlnbr=10 Chlora -999\nEND_DATA
-  for (j in seq_len(ncol(DT)))  set(DT, which( (DT[[j]]) == -999 ),j,NA)   # or by number (slightly faster than by name)
+  #for (j in seq_len(ncol(DT)))  set(DT, which( (DT[[j]]) %in% NA_vals_split ),j,NA)   # or by number (slightly faster than by name)
+  NA_vals_split <- strsplit(NA_vals, split = " ")[[1]]
+  for (j in seq_len(ncol(DT)))  set(DT, grep(paste(NA_vals_split, collapse = "|"), DT[[j]]),j,NA)
 }
+
 
 #Variables data.frame
 var.units <- data.frame(var        = c("pH", "pCO2",    "ALK", "DIC", "CO2", "HCO3", "CO3"),
@@ -335,14 +338,22 @@ shinyServer(function(input, output, session) {
   #Process uploaded data
   dt <- reactive({if(is.null(input$inputFile)) return(NULL)
                         qq <- data.table::fread(input$inputFile$datapath, header = TRUE, na.strings = c("NA","#DIV/0!"))
-                        f_dowle3(qq)        #convert -999 to NA (see function above)
+                        #f_dowle3(qq, NA_vals = input$uplNAs)        #convert -999 to NA (see function above)
                         return(qq)
   })
+  #Recode user-defined NA strings to NA
+  observeEvent(  
+    input$upl_f_dowle3, {   #when action button is pushed, then update the isolated code
+    isolate({
+      f_dowle3(dt(), NA_vals = input$uplNAs)        #convert user defined NA strings to NA (see function above)
+      output$upl_str <- renderPrint({ str(dt()) })
+     })} )
+  
   dtNames <- reactive({ names(dt())  })
-
+  
   output$upl_str <- renderPrint({ str(dt()) })
 
-  
+  output$troubleshooting <- renderPrint({list(input$uplNAs, input$upl_f_dowle3, dt()[1:3,1:7] )})#input$prDT_rows_selected })
   #Once data are uploaded, create a reactive UI with options selected from the uploaded data.
   #However, I want users to see the static part of the UI (column #, variable, unit) before they upload their data,
   #so I will make 2 UIs: one with static information and one reactive UI with dropdown selections based on uploaded data.
@@ -425,6 +436,11 @@ shinyServer(function(input, output, session) {
     dt()[, Pout.bar := as.numeric(get(input$upl_Pout))/10] #Calculate P in bar from dbar
     dt()[, PT  := as.numeric(get(input$upl_Pt))*1e-6]  #Calculate phosphate in mol kg-1 from umol kg-1
     dt()[, SIT  := as.numeric(get(input$upl_Sit))*1e-6] 
+    #If checkbox for nutrients NA = 0, then convert those rows with NA to 0
+    if(input$upl_AssumeNuts0 == TRUE) {
+      dt()[is.na(PT),  PT  := 0]
+      dt()[is.na(SIT), SIT := 0]
+    }
 
     #4) Create a subset of the original data.table where all NA values are discarded. Then combine with the full table.
     filterNAfrom_dt <- dt()[, .(Sin, Tin, Tout, Pin.bar, Pout.bar, PT, SIT, UNO, DOS)]  #or dt()[, c("colname1", "colname2", ...), with=FALSE]
