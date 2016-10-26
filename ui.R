@@ -181,7 +181,7 @@ shinyUI(fluidPage(
       fluidRow(column(6,
         textInput(inputId = "uplNAs", label="Indicate missing values (NA)", value = "-9 -999 NULL")
         ),
-        column(3, checkboxInput(inputId = "upl_AssumeNuts0", label = "Assume missing nutrients are 0 &mu;mol kg<sup>-1</sup>", value = TRUE)),
+        column(3, checkboxInput(inputId = "upl_AssumeNuts0", label = HTML("Assume missing nutrients are 0 &mu;mol kg<sup>-1</sup>"), value = TRUE)),
         column(3, actionButton("upl_f_dowle3", label = "Recode NAs"))
         ),
       br(),
